@@ -55,7 +55,7 @@ def main():
     k = 3                                                           # top-k accuracy
     n = 10                                                          # no. of SKU data required for new benchmark
 
-    df = pd.read_csv('geek_perf.csv')
+    df = pd.read_csv('../geek_perf.csv')
     wkldname = ['AES', 'BZip2 Compress', 'BZip2 Decompress', 'BlackScholes', 'Blur Filter', 'DFFT', 'DGEMM', 'Dijkstra', 'JPEG Compress', 'JPEG Decompress', 'Lua', 'Mandelbrot', 'N-Body', 'PNG Compress', 'PNG Decompress', 'Ray Trace', 'SFFT', 'SGEMM', 'SHA1', 'SHA2', 'Sharpen Filter', 'Sobel', 'Stream Add', 'Stream Copy', 'Stream Scale', 'Stream Triad', 'Twofish']
     wkldmae = [0] * 27                                              # for storing average benchmark MAE
     wkldsd = [0] * 27                                               # for storing average benchmark SD of MAEs
