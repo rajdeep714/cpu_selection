@@ -16,7 +16,7 @@ print('Device: ' + str(device))
 class GeekDataset(t.utils.data.Dataset):
     def __init__(self, src_df):
         xdf = src_df.drop(columns='run time').values
-        ydf = src_df['run time'].values.reshape(-1, 1)  # 2-D required
+        ydf = src_df['run time'].values.reshape(-1, 1)
         self.x_data = t.tensor(xdf, dtype=t.float32).to(device)
         self.y_data = t.tensor(ydf, dtype=t.float32).to(device)
 
@@ -26,51 +26,49 @@ class GeekDataset(t.utils.data.Dataset):
     def __getitem__(self, idx):
         preds = self.x_data[idx]
         runtime = self.y_data[idx]
-        return preds, runtime  # tuple of two matrices
+        return preds, runtime
 
 
 class Net(t.nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.hid1 = t.nn.Linear(48, 100)  # 48-(100-100-100)-1
+        self.hid1 = t.nn.Linear(48, 100)                            # 48-(100-100-100)-1
         self.hid2 = t.nn.Linear(100, 100)
         self.hid3 = t.nn.Linear(100, 100)
         self.oupt = t.nn.Linear(100, 1)
 
     def forward(self, x):
-        z = t.tanh(self.hid1(x))
+        z = t.tanh(self.hid1(x))                                    # tanh activation
         z = t.tanh(self.hid2(z))
         z = t.tanh(self.hid3(z))
-        z = self.oupt(z)  # no activation
+        z = self.oupt(z)                                            # no activation at last layer
         return z
 
 
 def main():
-    bat_size = 20
-    num_epochs = 50
-    num_reps = 1
-    ep_log_interval = 25
-    lrn_rate = 0.001
-    reg_lambda = 0
-    k = 3  # top-k accuracy
-    n = 10  # no. of SKU data required for new workload
+    bat_size = 20                                                   # batch size
+    num_epochs = 300                                                # number of epochs
+    num_reps = 20                                                   # number of repetitions for sub-sampling validation
+    ep_log_interval = 300                                           # print loss information after this many epochs
+    lrn_rate = 0.001                                                # learning rate
+    reg_lambda = 0.01                                               # regularization lambda
+    k = 3                                                           # top-k accuracy
+    n = 10                                                          # no. of SKU data required for new benchmark
 
-    df = pd.read_csv('gim.csv')
+    df = pd.read_csv('../geek_perf.csv')
     wkldname = ['AES', 'BZip2 Compress', 'BZip2 Decompress', 'BlackScholes', 'Blur Filter', 'DFFT', 'DGEMM', 'Dijkstra', 'JPEG Compress', 'JPEG Decompress', 'Lua', 'Mandelbrot', 'N-Body', 'PNG Compress', 'PNG Decompress', 'Ray Trace', 'SFFT', 'SGEMM', 'SHA1', 'SHA2', 'Sharpen Filter', 'Sobel', 'Stream Add', 'Stream Copy', 'Stream Scale', 'Stream Triad', 'Twofish']
-    wkldmae = [0] * 27  # for storing average DNN model MAE
-    wkldsd = [0] * 27  # for storing average DNN model SD
-    wkldacc = [0] * 27  # for storing DNN model accuracy
+    wkldmae = [0] * 27                                              # for storing average benchmark MAE
+    wkldsd = [0] * 27                                               # for storing average benchmark SD of MAEs
+    wkldacc = [0] * 27                                              # for storing benchmark accuracy
 
-    # loop over 27 workloads
-    for wkld in range(27):
-        print("Workload : %d" % wkld)
-        wkld_df = df[df.iloc[:, wkld+4] == 1]     # first benchmark column no. is 4
-        nwkld_df = df[df.iloc[:, wkld+4] == 0]
-        n_correct = 0
+    for wkld in range(27):                                          # loop over 27 benchmarks
+        print("Benchmark  %d: %s" % (wkld, wkldname[wkld]))
+        wkld_df = df[df.iloc[:, wkld+22] == 1]                      # dataframe of rows of benchmark wkld (benchmark columns start from 22)
+        nwkld_df = df[df.iloc[:, wkld+22] == 0]                     # dataframe of rows of benchmarks other than wkld
+        n_correct = 0                                               # number of correct predictions according to top-k accuracy
         n_wrong = 0
-        mae = np.zeros(num_reps)    # array of mae of each repetition DNN
-        # 20 repetitions for each workload
-        for rep in range(1, num_reps+1):
+        mae = np.zeros(num_reps)                                    # array of mae of each repetition
+        for rep in range(1, num_reps+1):                            # repetitions for each benchmark
             # gather randomly 10% data of workload for test_ds
             print("\tRepetition : %2d" % rep)
             test_df = wkld_df.sample(frac=0.1, random_state=rep)
@@ -78,7 +76,7 @@ def main():
             traindf = wkld_df.drop(test_df.index).sample(n, random_state=rep)
             train_df = pd.concat([nwkld_df, traindf])
             test_df.reset_index(drop=True, inplace=True)
-            min_rt_idx = test_df['run time'].idxmin()  # minimum runtime index in test dataset
+            min_rt_idx = test_df['run time'].idxmin()               # minimum runtime index in test dataset
 
             train_ds = GeekDataset(train_df)
             test_ds = GeekDataset(test_df)
@@ -86,65 +84,66 @@ def main():
             test_ldr = t.utils.data.DataLoader(test_ds, batch_size=bat_size)
 
             net = Net().to(device)
-            loss_func = t.nn.L1Loss()
-            optimizer = t.optim.RMSprop(net.parameters(), lr=lrn_rate)
+            loss_func = t.nn.L1Loss()                                    # L1 loss function
+            optimizer = t.optim.RMSprop(net.parameters(), lr=lrn_rate)   # RMSprop optimizer
 
-            net.train()  # set mode
+            net.train()                                              # set mode
             for epoch in range(1, num_epochs+1):
-                t.manual_seed(epoch)  # recovery reproducibility
-                epoch_loss = 0  # for one full epoch
+                t.manual_seed(epoch)                                 # recovery reproducibility
+                epoch_loss = 0                                       # training loss for one full epoch
 
-                for X, Y in train_ldr:
-                    oupt = net(X)  # predicted prices
-                    loss_val = loss_func(oupt, Y)  # avg per item in batch
-                    epoch_loss += loss_val.item()  # accumulate avgs
+                for X, Y in train_ldr:                               # training loop
+                    oupt = net(X)                                    # predicted runtime
+                    loss_val = loss_func(oupt, Y)                    # loss per row in batch
+                    epoch_loss += loss_val.item()                    # accumulate losses
                     loss_val += reg_lambda * sum(p.abs().sum() for p in net.parameters())  # L1 regularization
-                    optimizer.zero_grad()  # prepare gradients
-                    loss_val.backward()  # compute gradients
-                    optimizer.step()  # update wts
+                    optimizer.zero_grad()                            # prepare gradients
+                    loss_val.backward()                              # compute gradients
+                    optimizer.step()                                 # update wts
 
-                epoch_loss /= len(train_ldr)
-                if epoch % ep_log_interval == 0 or epoch == 1:
+                epoch_loss /= len(train_ldr)                         # calculate avg loss for this epoch
+                if epoch % ep_log_interval == 0 or epoch == 1:       # print loss
                     print("\t\tEpoch = %4d   loss = %0.4f" % (epoch, epoch_loss))
 
-            # path = f"./Case2/GeekLog/Uarch{uarch}_Rep{rep}.pth"
-            # info_dict = {
-            #    'repetition': rep,
-            #    'net_state': net.state_dict(),
-            #    'optimizer_state': optimizer.state_dict()
-            # }
-            # t.save(info_dict, path)
+            path = f"./GeekLog/Uarch{uarch}_Rep{rep}.pth"            # save model parameters for current repetition here
+            info_dict = {
+               'repetition': rep,
+               'net_state': net.state_dict(),
+               'optimizer_state': optimizer.state_dict()
+            }
+            t.save(info_dict, path)
 
             net.eval()
-            preds = []
-            for X, Y in test_ldr:
+            preds = []                                                # predicted runtimes
+            for X, Y in test_ldr:                                     # testing loop
                 with t.no_grad():
-                    oupt = net(X)
-                    preds += oupt.tolist()  # computed runtime
-                    mae[rep-1] += loss_func(oupt, Y).item()
+                    oupt = net(X)                                     # computed runtime
+                    preds += oupt.tolist()                            # append to list
+                    mae[rep - 1] += loss_func(oupt, Y).item()         # update mae of current repetition
 
-            mae[rep-1] /= len(test_ldr)
+            mae[rep-1] /= len(test_ldr)                             # average mae of current repetition 
             print("\tMAE of repetition %2d predictions = %0.4f" % (rep, mae[rep-1]))
-            min_rt_pred = preds[min_rt_idx]  # predicted runtime value for SKU which has minimum runtime
+            min_rt_pred = preds[min_rt_idx]                         # predicted runtime value for SKU which has minimum runtime
             preds.sort()
             print("\tRank of best SKU in test SKU predictions = %4d in %4d" % (preds.index(min_rt_pred), len(preds)))
-            if preds.index(min_rt_pred) < k:  # min runtime is among top k predicted min runtimes
-                n_correct += 1
+            if preds.index(min_rt_pred) < k:                        # min runtime is among top k predicted min runtimes
+                n_correct += 1                                      # count as correct prediction for accuracy
             else:
                 n_wrong += 1
 
-        wkldmae[wkld] = mae.mean()
-        wkldsd[wkld] = mae.std()
-        wkldacc[wkld] = (n_correct * 1.0) / (n_correct + n_wrong)  # accuracy of this uarch
-        print("Average MAE, SD and accuracy of %s DNN predictions = %0.4f %0.4f %0.4f" % (
+        wkldmae[wkld] = mae.mean()                                  # mae of current benchmark = average mae over all repetitions
+        wkldsd[wkld] = mae.std()                                    # std of mae of current benchmark
+        wkldacc[wkld] = (n_correct * 1.0) / (n_correct + n_wrong)   # accuracy of current benchmark
+        print("Average MAE, SD and accuracy of %s predictions = %0.4f %0.4f %0.4f" % (
         wkldname[wkld], wkldmae[wkld], wkldsd[wkld], wkldacc[wkld]))
 
-    wkldmae, wkldsd, wkldacc, wkldname = (list(a) for a in zip(*sorted(zip(wkldmae, wkldsd, wkldacc, wkldname))))
+    wkldmae, wkldsd, wkldacc, wkldname = (list(a) for a in zip(*sorted(zip(wkldmae, wkldsd, wkldacc, wkldname))))      # sort the benchmark results by mae
     wkldname.append('average')
-    wkldmae.append(sum(wkldmae[:27]) / 27)
-    wkldsd.append(sum(wkldsd[:27]) / 27)
-    wkldacc.append(sum(wkldacc[:27]) / 27)
+    wkldmae.append(sum(wkldmae[:27]) / 27)                          # avg mae of all benchmarks
+    wkldsd.append(sum(wkldsd[:27]) / 27)                            # avg std of mae of all benchmarks
+    wkldacc.append(sum(wkldacc[:27]) / 27)                          # avg accuracy of the model
 
+    # creating the plots
     plt.plot(wkldname, wkldmae)
     plt.xticks(rotation=90)
     plt.ylabel('Mean Absolute Error', fontweight='bold', fontsize=10)
