@@ -57,11 +57,11 @@ class LR(t.nn.Module):
 
 def main():
     bat_size = 20                                                   # batch size
-    num_epochs = 50                                                 # number of epochs
-    num_reps = 10                                                   # number of repetitions for sub-sampling validation
-    ep_log_interval = 50                                            # print loss information after this many epochs
+    num_epochs = 300                                                # number of epochs
+    num_reps = 20                                                   # number of repetitions for sub-sampling validation
+    ep_log_interval = 300                                           # print loss information after this many epochs
     lrn_rate = 0.001                                                # learning rate
-    reg_lambda = 0                                                  # regularization lambda
+    reg_lambda = 0.01                                               # regularization lambda
     k = 3                                                           # top-k accuracy
 
     df = pd.read_csv('spec_perf.csv')
@@ -156,13 +156,13 @@ def main():
                     print("\t\t           LR loss = %0.4f" % lrepoch_loss)
                     print("\t\t           LR  val loss = %0.4f" % lrepoch_vloss)
 
-            # path = f"./SpecLog/Uarch{uarch}_Rep{rep}.pth"
-            # info_dict = {
-            #    'repetition': rep,
-            #    'net_state': net.state_dict(),
-            #    'optimizer_state': optimizer.state_dict()
-            # }
-            # t.save(info_dict, path)
+            path = f"./SpecLog/Uarch{uarch}_Rep{rep}.pth"            # save model parameters for current repetition here
+            info_dict = {
+               'repetition': rep,
+               'net_state': net.state_dict(),
+               'optimizer_state': optimizer.state_dict()
+            }
+            t.save(info_dict, path)
             if rep == 1:                                              # show epoch - loss graph for first repetition
                 plt.plot(range(1, num_epochs + 1), train_loss, 'g', label='Training loss')
                 plt.plot(range(1, num_epochs + 1), val_loss, 'b', label='Validation loss')
