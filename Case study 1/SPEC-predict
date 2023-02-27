@@ -64,7 +64,7 @@ def main():
     reg_lambda = 0.01                                               # regularization lambda
     k = 3                                                           # top-k accuracy
 
-    df = pd.read_csv('spec_perf.csv')
+    df = pd.read_csv('../spec_perf.csv')
     archname = ['sandy bridge', 'ivy bridge', 'haswell', 'broadwell', 'skylake', 'average']
     archmae = [0] * 6                                               # for storing average DNN model MAE
     archsd = [0] * 6                                                # for storing average DNN model SD
