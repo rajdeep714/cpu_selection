@@ -172,7 +172,7 @@ def main():
                 plt.ylabel('Loss')
                 plt.title('Training and Validation loss using DNN')
                 plt.legend()
-                plt.savefig(archname[uarch] + " DNN.png")
+                plt.savefig("GeekBench " + archname[uarch] + " DNN epoch-loss.png")
                 plt.close()
 
                 plt.plot(range(1, num_epochs + 1), lrtrain_loss, 'g', label='Training loss')
@@ -181,7 +181,7 @@ def main():
                 plt.ylabel('Loss')
                 plt.title('Training and Validation loss using LR')
                 plt.legend()
-                plt.savefig(archname[uarch] + " LR.png")
+                plt.savefig("GeekBench " + archname[uarch] + " LR epoch-loss.png")
                 plt.close()
 
             net.eval()
