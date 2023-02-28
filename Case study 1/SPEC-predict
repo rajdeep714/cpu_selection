@@ -75,9 +75,9 @@ def main():
     lrarchsd = [0] * 6                                              # for storing average LR model SD
     lrarchacc = [0] * 6                                             # for storing LR model accuracy
     for uarch in range(5):                                          # loop over 5 micro architectures
-        print("Uarch : " + archname[uarch])
-        uarch_df = df[df['uarch'] == uarch]
-        nuarch_df = df[df['uarch'] != uarch]
+        print("Micro-architecture %d: %s" % (uarch, archname[uarch]))
+        uarch_df = df[df['uarch'] == uarch]                         # dataframe of rows of micro-architecture uarch
+        nuarch_df = df[df['uarch'] != uarch]                        # dataframe of rows of micro-architectures other than uarch
         n_correct = 0                                               # number of correct predictions according to top-k accuracy
         n_wrong = 0
         lrn_correct = 0
